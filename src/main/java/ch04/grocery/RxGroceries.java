@@ -1,4 +1,4 @@
-package ch04;
+package ch04.grocery;
 
 import java.math.BigDecimal;
 
@@ -17,6 +17,7 @@ public class RxGroceries {
 
         final BigDecimal priceForProduct = BigDecimal.valueOf(RandomUtils.nextDouble(10.0, 100.0));
         try {
+            log.info("Sleeping in thread [{}]", Thread.currentThread().getName());
             Thread.sleep(1000 + quantity * RandomUtils.nextInt(100, 1000));
         } catch (InterruptedException e) {
             e.printStackTrace();
