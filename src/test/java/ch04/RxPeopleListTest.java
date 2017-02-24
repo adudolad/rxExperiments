@@ -201,10 +201,10 @@ public class RxPeopleListTest {
     @Test
     public void testZip() {
 
-        TestSubscriber<TimeInterval<Pair<String, String>>> timeSubscriber = TestSubscriber.create(Subscribers.create(
-                    x -> log.info("Value is [{}], in [{}] ms", x.getValue(), x.getIntervalInMilliseconds())));
+        final TestSubscriber<TimeInterval<Pair<String, String>>> timeSubscriber = TestSubscriber.create(Subscribers
+                    .create(x -> log.info("Value is [{}], in [{}] ms", x.getValue(), x.getIntervalInMilliseconds())));
 
-        TestSubscriber<Pair<String, String>> subscriber = new TestSubscriber<>();
+        final TestSubscriber<Pair<String, String>> subscriber = new TestSubscriber<>();
 
         final Observable<String> strings = Observable.just("a", "b", "c", "d").zipWith(Observable.interval(100,
                     TimeUnit.MILLISECONDS, scheduler), (data, timer) -> data);
@@ -212,18 +212,39 @@ public class RxPeopleListTest {
         final Observable<String> numbers = Observable.just("1", "2", "3", "4").zipWith(Observable.interval(110,
                     TimeUnit.MILLISECONDS, scheduler), (data, timer) -> data);
 
-        // Merge
+        final Observable<String> symbols = Observable.just("!", "?", "#", "$").zipWith(Observable.interval(120,
+                    TimeUnit.MILLISECONDS, scheduler), (data, timer) -> data);
+
+// Observable<Pair<String, String>> test = Observable.zip(strings, numbers, symbols,
+// (s, n, sy) -> Pair.of(s + sy, n));
+//
+// test.subscribeOn(scheduler).subscribe(subscriber);
+
         strings.zipWith(numbers, Pair::of).timeInterval().subscribeOn(scheduler).subscribe(timeSubscriber);
         strings.zipWith(numbers, Pair::of).subscribeOn(scheduler).subscribe(subscriber);
 
         scheduler.advanceTimeBy(105, TimeUnit.MILLISECONDS);
         subscriber.assertNoValues();
 
-        scheduler.advanceTimeBy(10, TimeUnit.MILLISECONDS);
-        subscriber.assertReceivedOnNext(Lists.newArrayList(Pair.of("a", "1")));
+        scheduler.advanceTimeBy(15, TimeUnit.MILLISECONDS);
+        subscriber.assertReceivedOnNext(Lists.newArrayList(Pair.of("a!", "1")));
 
-        scheduler.advanceTimeBy(115, TimeUnit.MILLISECONDS);
-        subscriber.assertReceivedOnNext(Lists.newArrayList(Pair.of("a", "1"), Pair.of("b", "2")));
+        scheduler.advanceTimeBy(125, TimeUnit.MILLISECONDS);
+        subscriber.assertReceivedOnNext(Lists.newArrayList(Pair.of("a!", "1"), Pair.of("b?", "2")));
     }
 
+    @Test
+    public void testZipWithEmptyObservable() {
+        final TestSubscriber<TimeInterval<Pair<String, String>>> timeSubscriber = TestSubscriber.create(Subscribers
+                    .create(x -> log.info("Value is [{}], in [{}] ms", x.getValue(), x.getIntervalInMilliseconds())));
+
+        final Observable<String> strings = Observable.just("a", "b").zipWith(Observable.interval(100,
+                    TimeUnit.MILLISECONDS, scheduler), (data, timer) -> data);
+
+        strings.zipWith(strings, Pair::of).timeInterval().subscribeOn(scheduler).doOnNext(x ->
+                       log.info("Next is [{}]", x)).subscribe(x -> { log.info("Value is [{}]" + x); });
+
+        scheduler.advanceTimeBy(105, TimeUnit.MILLISECONDS);
+        scheduler.advanceTimeBy(105, TimeUnit.MILLISECONDS);
+    }
 }

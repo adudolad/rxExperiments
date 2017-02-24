@@ -140,12 +140,16 @@ public class SubscribeAndObserveOnTest {
         obs.subscribeOn(schedulerA).flatMap(x -> store(x).subscribeOn(schedulerB)).observeOn(schedulerC).subscribe(x ->
                 log.info("Got: [{}]", x),
             Throwable::printStackTrace, () -> log.info("Completed"));
+
+        obs.subscribeOn(schedulerA).flatMap(x -> store(x).subscribeOn(schedulerB)).observeOn(schedulerC).toBlocking()
+           .forEach(event -> { log.info("Got: [{}]", event); });
+
         log.info("Exiting");
 
         Thread.sleep(1000);
     }
 
-    private Observable<UUID> store(final String s) {
+    public static Observable<UUID> store(final String s) {
         return Observable.create(subscriber -> {
                 log.info("Storing [{}]", s);
                 subscriber.onNext(UUID.randomUUID());
